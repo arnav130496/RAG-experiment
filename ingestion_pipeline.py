@@ -2,11 +2,10 @@ import os
 from chromadb import Documents
 from langchain_community.document_loaders import TextLoader, DirectoryLoader
 from langchain_text_splitters import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
-from langchain_chroma import Chroma
-from dotenv import load_dotenv
+from rag_utils import create_vector_store_from_documents, load_environment
 
-load_dotenv()
+
+load_environment()
 
 def load_documents(docs_path: str = "docs")-> list[Documents]:
     """Load documents from the specified directory."""
@@ -60,16 +59,11 @@ def split_documents(documents: list[Documents], chunk_size: int = 1000, chunk_ov
 def create_vector_store(chunks: list[Documents], persist_directory: str = "db/chromadb"):
     """Create a Chroma vector store from the document chunks."""
     print("Creating vector store...")
-
-    embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small", dimensions=1024)
-
     print(f"--- Creating Chroma vector store with {len(chunks)} chunks ---")
 
-    vector_store = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings_model,
+    vector_store = create_vector_store_from_documents(
+        chunks,
         persist_directory=persist_directory,
-        collection_metadata={"hnsw:space": "cosine"}
     )
     print(f"--- Finished creating Chroma vector store with {len(chunks)} chunks ---")
     print(f"Vector store created and saved in directory: {persist_directory}")

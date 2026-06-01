@@ -1,37 +1,11 @@
-from langchain_openai import OpenAIEmbeddings
-from langchain_chroma import Chroma
-from dotenv import load_dotenv
+from rag_utils import (
+    create_embedding_model,
+    create_retriever,
+    init_vector_store,
+    load_environment,
+)
 
-PERSISTENT_DIRECTORY = "db/chromadb"
 QUERY = "Who succeeded Ze'ev Drori as CEO in October 2008?"
-EMBEDDING_MODEL_NAME = "text-embedding-3-small"
-
-
-def load_environment() -> None:
-    """Load environment variables from a .env file."""
-    load_dotenv()
-
-
-def create_embedding_model(model_name: str) -> OpenAIEmbeddings:
-    """Create the OpenAI embedding model."""
-    return OpenAIEmbeddings(model=model_name, dimensions=1024)
-
-
-def init_vector_store(persist_directory: str, embedding_model: OpenAIEmbeddings) -> Chroma:
-    """Initialize the Chroma vector store."""
-    return Chroma(
-        persist_directory=persist_directory,
-        embedding_function=embedding_model,
-        collection_metadata={"hnsw:space": "cosine"},
-    )
-
-
-def create_retriever(db: Chroma, k: int = 3):
-    """Build a retriever for the vector store."""
-    # The retriever will return the top k most relevant documents based on cosine similarity.
-    return db.as_retriever(search_kwargs={"k": k})
-    # Optional: Set a score threshold for relevance
-    # return db.as_retriever(search_kwargs={"k": k, "score_threshold": 0.3})
 
 def display_documents(query: str, documents) -> None:
     """Print the query and retrieved document contents."""
@@ -45,8 +19,8 @@ def display_documents(query: str, documents) -> None:
 def main() -> None:
     load_environment()
 
-    embedding_model = create_embedding_model(EMBEDDING_MODEL_NAME)
-    db = init_vector_store(PERSISTENT_DIRECTORY, embedding_model)
+    embedding_model = create_embedding_model()
+    db = init_vector_store(embedding_model=embedding_model)
     retriever = create_retriever(db)
 
     relevant_docs = retriever.invoke(QUERY)
