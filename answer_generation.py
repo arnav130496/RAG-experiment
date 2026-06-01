@@ -1,35 +1,33 @@
-from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
-from dotenv import load_dotenv
+from rag_utils import (
+    create_embedding_model,
+    create_retriever,
+    init_vector_store,
+    load_environment,
+    get_persistent_directory,
+)
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 
-load_dotenv()
+load_environment()
 
-persistent_directory = "db/chromadb"
+persistent_directory = get_persistent_directory()
 
 # Load embeddings and vector store
-embedding_model = OpenAIEmbeddings(model="text-embedding-3-small", dimensions=1024)
+embedding_model = create_embedding_model()
 
-db = Chroma(
+db = init_vector_store(
     persist_directory=persistent_directory,
-    embedding_function=embedding_model,
-    collection_metadata={"hnsw:space": "cosine"}  
+    embedding_model=embedding_model,
 )
 
 # Search for relevant documents
 query = "How much did Microsoft pay to acquire GitHub?"
 
-retriever = db.as_retriever(search_kwargs={"k": 5})
+retriever = create_retriever(db, k=5)
 
-# retriever = db.as_retriever(
-#     search_type="similarity_score_threshold",
-#     search_kwargs={
-#         "k": 5,
-#         "score_threshold": 0.3  # Only return chunks with cosine similarity ≥ 0.3
-#     }
-# )
+# If you want to require a minimum relevance score instead, pass score_threshold to create_retriever.
+# retriever = create_retriever(db, k=5, score_threshold=0.3)
 
 relevant_docs = retriever.invoke(query)
 
